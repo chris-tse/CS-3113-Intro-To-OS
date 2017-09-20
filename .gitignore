@@ -1,6 +1,8 @@
-hw*/**/**
-!hw*/**/*.c
-!*.h
+# Ignore all
+*
+# Unignore all with extensions
+!*.*
+# Unignore all dirs
+!*/
+
 !Makefile
-!README.md
-!stuff/
