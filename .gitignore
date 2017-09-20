@@ -1,6 +1,6 @@
 *
 !*.c
 !*.h
-!Makefile
+!**/Makefile
 !README.md
 !stuff/
