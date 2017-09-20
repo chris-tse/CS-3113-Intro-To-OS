@@ -1,1 +1,5 @@
-stuff/
+*
+!*.c
+!*.h
+!Makefile
+!stuff/
