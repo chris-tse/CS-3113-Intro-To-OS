@@ -1,5 +1,5 @@
-*
-!*.c
+hw*/**/**
+!hw*/**/*.c
 !*.h
 !Makefile
 !README.md
