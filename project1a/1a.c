@@ -14,6 +14,7 @@ int main(int argc, char **argv)
     char *args[MAX_ARGS];                    // pointer to tokenized input array
     char **arg;                              // pointer to loop through args
     char *prompt = "amadeus > ";             // prompt text
+    char dir[BUFFER_SIZE];                   // buffer for dir command
 
     system("clear");                         // clear terminal before taking in input
 
@@ -41,16 +42,15 @@ int main(int argc, char **argv)
 
                 if (!strcmp(args[0], "dir")) // dir command
                 {
-                    char str[BUFFER_SIZE];
-                    strcpy(str, "ls -al ");
                     if (args[1] == NULL)
                     {
-                        system(str);
+                        system("ls -al");
                     }
                     else
                     {
-                        strcat(str, args[1]);
-                        system(str);
+                        strcpy(dir, "ls -al ");
+                        strcat(dir, args[1]);
+                        system(dir);
                     }
                     continue;
                 }
