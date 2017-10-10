@@ -5,5 +5,5 @@
 # Unignore all dirs
 !*/
 
-!Makefile
+!makefile
 stuff/
