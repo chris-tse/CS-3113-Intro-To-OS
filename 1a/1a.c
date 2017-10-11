@@ -68,14 +68,16 @@ int main(int argc, char **argv)
                 if (!strcmp(args[0], "quit")) // quit command
                     break;                    // break out of while input loop
 
-                // if neither, print command
+                // if none of the above, pass the commands to system
                 arg = args;
+                char syscmd[BUFFER_SIZE];
+                strcpy(syscmd, *arg++);
                 while(*arg)
                 {
-                    fputs(*arg++, stdout);
-                    fputs(" ", stdout);
+                    strcat(syscmd, " ");
+                    strcat(syscmd, *arg++);
                 }
-                fputs("\n", stdout);
+                system(syscmd);
             }
         }
     }
