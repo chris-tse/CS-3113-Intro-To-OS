@@ -47,38 +47,39 @@ int main(int argc, char **argv)
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
 
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
-
-            if (args[0])
+			if (args[0])
             {
-
+				arg = args;
                 // check for redirection operators
-                for (int i = 0; i < MAX_ARGS; i++)
-                {
-                    int res = isIOOp(args[i]);          // check whether current arg is output redirection operator
+				while(*arg)
+				{
+					int res = isIOOp(*arg);
 
-                    switch (res)
-                    {
-                        case 0:
-                            // make i+1 input
-                            redirectin = 1;
-                            intarget = args[i+1];
-                            break;
-                        case 1:
-                            // make i+1 output override
-                            redirectout = 1;
-                            outtarget = args[i+1];
-                            break;
-                        case 2:
-                            // make i+1 output append
-                            redirectout = 2;
-                            outtarget = args[i+1];
-                            break;
-                        default:
-                            // do nothing
-                            break;
-                    }
-                }
-                if (!strcmp(args[0], "clr")) // clear command
+					switch (res)
+					{
+						case 0:
+							redirectin = 1;
+							intarget = *++arg;
+							arg--;
+							break;
+
+						case 1:
+							redirectout = 1;
+							outtarget = *++arg;
+							arg--;
+							break;
+						case 2:
+							redirectout = 2;
+							outtarget = *++arg;
+							arg--;
+							break;
+						default:
+							break;
+					}	
+					arg++;
+				}
+                
+				if (!strcmp(args[0], "clr")) // clear command
                 {
                     forkexec(clr, 0, NULL, 0, NULL);         // use clr command array from above
                     continue;
