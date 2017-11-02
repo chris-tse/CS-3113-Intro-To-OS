@@ -38,6 +38,8 @@ int main(int argc, char **argv)
         char *outtarget;
         char *intarget;
 
+        int firstIO = -1;
+
         if (fgets(buf, BUFFER_SIZE, stdin))  // read in a line of command
         {
 
@@ -49,6 +51,7 @@ int main(int argc, char **argv)
             if (args[0])
             {
                 arg = args;
+                int i = 0;
                 // check for redirection operators
 				while(*arg)
 				{
@@ -57,17 +60,23 @@ int main(int argc, char **argv)
 					switch (res)
 					{
                         case 0:
+                            if (firstIO < 0)
+                                firstIO = i;
 							redirectin = 1;
                             intarget = *++arg;
                             arg++;
 							break;
 
                         case 1:
+                            if (firstIO < 0)
+                                firstIO = i;
 							redirectout = 1;
                             outtarget = *++arg;
                             arg++;
 							break;
                         case 2:
+                            if (firstIO < 0)
+                                firstIO = i;
 							redirectout = 2;
                             outtarget = *++arg;
                             arg++;
@@ -76,6 +85,7 @@ int main(int argc, char **argv)
                             arg++;
 							break;
                     }
+                    i++;
 				}
 
 				if (!strcmp(args[0], "clr")) // clear command
@@ -120,7 +130,24 @@ int main(int argc, char **argv)
                     break;                    // break out of while input loop
 
                 // if none of the above, fork and exec the command
-                forkexec(args, redirectin, intarget, redirectout, outtarget);
+                if (firstIO >= 0)
+                {
+                    char *newArgs[MAX_ARGS] = { NULL };
+                    for (int i = 0; i < firstIO; i++)
+                    {
+                        newArgs[i] = args[i];
+                    }
+                    forkexec(newArgs, redirectin, intarget, redirectout, outtarget);
+                }
+                else
+                {
+                    forkexec(args, redirectin, intarget, redirectout, outtarget);
+                }
+
+
+
+                // memcpy(newArgs, args, firstIO*sizeof(char*));
+
             }
         }
     }
