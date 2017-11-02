@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 #define BUFFER_SIZE 1024                     // max line buffer
 #define MAX_ARGS 64                          // max num of args
 #define SEPARATORS " \t\n"                   // token separators
@@ -10,8 +12,8 @@
 extern char **environ;                   // environment array
 
 int isIOOp(char *arg);
-void printDir(char **args);
-void forkexec(char **argv);
+void printDir(char **args, int redirectin, char *intarget, int redirectout, char *outtarget);
+void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
 
 int main(int argc, char **argv)
 {
@@ -23,14 +25,21 @@ int main(int argc, char **argv)
     char dir[BUFFER_SIZE];                   // buffer for dir command
 
     char *clr[] = {"clear"};                 // clear terminal before taking in input
-    forkexec(clr);
+    forkexec(clr, 0, NULL, 0, NULL);
 
     // continue reading input until quit command or redirected input source ends
     while(!feof(stdin))
     {
 
         fputs(prompt, stdout);               // prompt user for commands
-
+        int save_out = dup(fileno(stdout));
+        int out;
+        int redirectin = 0;
+        int redirectout = 0;
+        char *outtarget;
+        char *intarget;
+        FILE *tmpout;
+        FILE *tmpin;
         if (fgets(buf, BUFFER_SIZE, stdin))  // read in a line of command
         {
 
@@ -41,31 +50,60 @@ int main(int argc, char **argv)
 
             if (args[0])
             {
+
+                // check for redirection operators
+                for (int i = 0; i < MAX_ARGS; i++)
+                {
+                    int res = isIOOp(args[i]);          // check whether current arg is output redirection operator
+
+                    switch (res)
+                    {
+                        case 0:
+                            // make i+1 input
+                            redirectin = 1;
+                            intarget = args[i+1];
+                            break;
+                        case 1:
+                            // make i+1 output override
+                            redirectout = 1;
+                            outtarget = args[i+1];
+                            break;
+                        case 2:
+                            // make i+1 output append
+                            redirectout = 2;
+                            outtarget = args[i+1];
+                            break;
+                        default:
+                            // do nothing
+                            break;
+                    }
+                }
                 if (!strcmp(args[0], "clr")) // clear command
                 {
-                    forkexec(clr);         // use system "clear" command
-                    continue;                // skip to next loop iteration
+                    forkexec(clr, 0, NULL, 0, NULL);         // use clr command array from above
+                    continue;
+                }
+
+                if (!strcmp(args[0], "cd"))              // cd command
+                {
+                    if (args[1] == NULL)                 // check if additional arguments are present
+                    {
+                        printf("%s\n", getenv("PWD"));   // print PWD if no
+                    }
+                    else
+                    {
+                        chdir(args[1]);                  // otherwise change process directory
+                        char pathbuf[BUFFER_SIZE];       // and copy cwd into a buffer
+                        getcwd(pathbuf, BUFFER_SIZE);
+                        setenv("PWD", pathbuf, 1);       // set PWD to buffer containing cwd
+                    }
+                    continue;
                 }
 
                 if (!strcmp(args[0], "dir")) // dir command
                 {
-                    printDir(args);
+                    printDir(args, redirectin, intarget, redirectout, outtarget);
                     continue;
-                }
-
-                if (!strcmp(args[0], "cd"))
-                {
-                    if (args[1] == NULL)
-                    {
-                        printf("%s\n", getenv("PWD"));
-                        continue;
-                    }
-
-                    else
-                    {
-                        chdir(args[1]);
-                        setenv("PWD", args[1], 1);
-                    }
                 }
 
                 if (!strcmp(args[0], "environ")) // environ command
@@ -82,27 +120,40 @@ int main(int argc, char **argv)
                     break;                    // break out of while input loop
 
                 // if none of the above, fork and exec the command
-                forkexec(args);
+                forkexec(args, 0, NULL, 0, NULL);
             }
         }
+        fflush(stdout);
+        close(out);
+        dup2(save_out, fileno(stdout));
     }
     exit(0);
 }
 
 /*
-    Returns 1 if arg is any of "<", ">", or ">>"
-    else returns 0
+    Returns 0 if <
+            1 if >
+            2 if >>
+    else returns -1
 */
-int isIOOp(char* arg)
+int isIOOp(char *arg)
 {
-    return !strcmp(arg, "<") || !strcmp(arg, ">") || !strcmp(arg, ">>");
+    if (arg == NULL)
+        return -1;
+    if (!strcmp(arg, "<"))
+        return 0;
+    if (!strcmp(arg, ">"))
+        return 1;
+    if (!strcmp(arg, ">>"))
+        return 2;
+    return -1;
 }
 
 /*
     Takes in original args array and appends argument for dir command
     to "ls -al " string to be tokenzied and passed into execvp
 */
-void printDir(char **args)
+void printDir(char **args, int redirectin, char *intarget, int redirectout, char *outtarget)
 {
     char lsbuf[BUFFER_SIZE];                   // ls buffer for command string
     char *lsargs[MAX_ARGS];                    // pointer to tokenized ls command array
@@ -114,21 +165,21 @@ void printDir(char **args)
     strcpy(lsbuf, ls);
 
 
-    if (args[1] != NULL)
+    if (args[1] != NULL && isIOOp(args[1]) < 0)
         strcat(lsbuf, args[1]);                // append argument after dir to ls command string if any
     else
         strcat(lsbuf, ".");                    // else append . for current directory
 
     *lsarg++ = strtok(lsbuf, SEPARATORS);
     while( (*lsarg++ = strtok(NULL, SEPARATORS)) );
-    forkexec(lsargs);
+    forkexec(lsargs, redirectin, intarget, redirectout, outtarget);
 }
 
 
 /*
     Performs a fork and execvp with the original args array passed in
 */
-void forkexec(char **argv)
+void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget)
 {
     pid_t childPid;
 
@@ -142,6 +193,12 @@ void forkexec(char **argv)
         case 0:
             // child process executes other commands with execvp
             // then exits
+            if (redirectin)
+                freopen(intarget, "r", stdin);
+            if (redirectout == 1)
+                freopen(outtarget, "w", stdout);
+            if (redirectout == 2)
+                freopen(outtarget, "a", stdout);
             execvp(argv[0], argv);
             exit(EXIT_SUCCESS);
         default:
