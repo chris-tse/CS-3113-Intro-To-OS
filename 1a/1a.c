@@ -69,15 +69,7 @@ int main(int argc, char **argv)
                     break;                    // break out of while input loop
 
                 // if none of the above, pass the commands to system
-                arg = args;
-                char syscmd[BUFFER_SIZE];
-                strcpy(syscmd, *arg++);
-                while(*arg)
-                {
-                    strcat(syscmd, " ");
-                    strcat(syscmd, *arg++);
-                }
-                system(syscmd);
+                system(buf);
             }
         }
     }
