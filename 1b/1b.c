@@ -32,14 +32,12 @@ int main(int argc, char **argv)
     {
 
         fputs(prompt, stdout);               // prompt user for commands
-        int save_out = dup(fileno(stdout));
-        int out;
+
         int redirectin = 0;
         int redirectout = 0;
         char *outtarget;
         char *intarget;
-        FILE *tmpout;
-        FILE *tmpin;
+
         if (fgets(buf, BUFFER_SIZE, stdin))  // read in a line of command
         {
 
@@ -47,9 +45,10 @@ int main(int argc, char **argv)
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
 
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
-			if (args[0])
+
+            if (args[0])
             {
-				arg = args;
+                arg = args;
                 // check for redirection operators
 				while(*arg)
 				{
@@ -57,18 +56,18 @@ int main(int argc, char **argv)
 
 					switch (res)
 					{
-						case 0:
+                        case 0:
 							redirectin = 1;
                             intarget = *++arg;
                             arg++;
 							break;
 
-						case 1:
+                        case 1:
 							redirectout = 1;
                             outtarget = *++arg;
                             arg++;
 							break;
-						case 2:
+                        case 2:
 							redirectout = 2;
                             outtarget = *++arg;
                             arg++;
@@ -124,9 +123,6 @@ int main(int argc, char **argv)
                 forkexec(args, redirectin, intarget, redirectout, outtarget);
             }
         }
-        fflush(stdout);
-        close(out);
-        dup2(save_out, fileno(stdout));
     }
     exit(0);
 }
