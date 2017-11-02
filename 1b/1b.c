@@ -12,7 +12,7 @@
 extern char **environ;                   // environment array
 
 int isIOOp(char *arg);
-void printDir(char **args, int redirectin, char *intarget, int redirectout, char *outtarget);
+void printDir(char **args, int redirectout, char *outtarget);
 void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
 
 int main(int argc, char **argv)
@@ -53,32 +53,32 @@ int main(int argc, char **argv)
                 // check for redirection operators
 				while(*arg)
 				{
-					int res = isIOOp(*arg);
+                    int res = isIOOp(*arg);
 
 					switch (res)
 					{
 						case 0:
 							redirectin = 1;
-							intarget = *++arg;
-							arg--;
+                            intarget = *++arg;
+                            arg++;
 							break;
 
 						case 1:
 							redirectout = 1;
-							outtarget = *++arg;
-							arg--;
+                            outtarget = *++arg;
+                            arg++;
 							break;
 						case 2:
 							redirectout = 2;
-							outtarget = *++arg;
-							arg--;
+                            outtarget = *++arg;
+                            arg++;
 							break;
-						default:
+                        default:
+                            arg++;
 							break;
-					}	
-					arg++;
+                    }
 				}
-                
+
 				if (!strcmp(args[0], "clr")) // clear command
                 {
                     forkexec(clr, 0, NULL, 0, NULL);         // use clr command array from above
@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 
                 if (!strcmp(args[0], "dir")) // dir command
                 {
-                    printDir(args, redirectin, intarget, redirectout, outtarget);
+                    printDir(args, redirectout, outtarget);
                     continue;
                 }
 
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
                     break;                    // break out of while input loop
 
                 // if none of the above, fork and exec the command
-                forkexec(args, 0, NULL, 0, NULL);
+                forkexec(args, redirectin, intarget, redirectout, outtarget);
             }
         }
         fflush(stdout);
@@ -154,7 +154,7 @@ int isIOOp(char *arg)
     Takes in original args array and appends argument for dir command
     to "ls -al " string to be tokenzied and passed into execvp
 */
-void printDir(char **args, int redirectin, char *intarget, int redirectout, char *outtarget)
+void printDir(char **args, int redirectout, char *outtarget)
 {
     char lsbuf[BUFFER_SIZE];                   // ls buffer for command string
     char *lsargs[MAX_ARGS];                    // pointer to tokenized ls command array
@@ -173,7 +173,7 @@ void printDir(char **args, int redirectin, char *intarget, int redirectout, char
 
     *lsarg++ = strtok(lsbuf, SEPARATORS);
     while( (*lsarg++ = strtok(NULL, SEPARATORS)) );
-    forkexec(lsargs, redirectin, intarget, redirectout, outtarget);
+    forkexec(lsargs, 0, NULL, redirectout, outtarget);
 }
 
 
