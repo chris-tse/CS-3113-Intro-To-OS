@@ -33,10 +33,10 @@ int main(int argc, char **argv)
 
         fputs(prompt, stdout);               // prompt user for commands
 
-        int redirectin = 0;
-        int redirectout = 0;
-        char *outtarget;
-        char *intarget;
+        int redirectin = 0;                  // flag for stdin redirection
+        int redirectout = 0;                 // flag for stdout redirection
+        char *outtarget;                     // string for stdout redirection src
+        char *intarget;                      // string for stdin redirection src
 
         int firstIO = -1;
 
@@ -52,43 +52,43 @@ int main(int argc, char **argv)
             {
                 arg = args;
                 int i = 0;
-                // check for redirection operators
-				while(*arg)
-				{
-                    int res = isIOOp(*arg);
 
-					switch (res)
-					{
-                        case 0:
+                while(*arg)                                     // loop through args array and check for IO redirectors
+                {
+                    int res = isIOOp(*arg);                     // check whether current arg is IO operator
+
+                    switch (res)
+                    {
+                        case 0:                                 // for each case
                             if (firstIO < 0)
                                 firstIO = i;
-							redirectin = 1;
+                            redirectin = 1;
                             intarget = *++arg;
                             arg++;
-							break;
+                            break;
 
                         case 1:
                             if (firstIO < 0)
                                 firstIO = i;
-							redirectout = 1;
+                            redirectout = 1;
                             outtarget = *++arg;
                             arg++;
-							break;
+                            break;
                         case 2:
                             if (firstIO < 0)
                                 firstIO = i;
-							redirectout = 2;
+                            redirectout = 2;
                             outtarget = *++arg;
                             arg++;
-							break;
+                            break;
                         default:
                             arg++;
-							break;
+                            break;
                     }
                     i++;
-				}
+                }
 
-				if (!strcmp(args[0], "clr")) // clear command
+                if (!strcmp(args[0], "clr")) // clear command
                 {
                     forkexec(clr, 0, NULL, 0, NULL);         // use clr command array from above
                     continue;
