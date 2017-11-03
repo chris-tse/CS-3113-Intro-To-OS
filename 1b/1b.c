@@ -190,11 +190,14 @@ void printDir(char **args, int redirectout, char *outtarget)
     else
         strcat(lsbuf, ".");                    // else append . for current directory
 
-    *lsarg++ = strtok(lsbuf, SEPARATORS);
-    while( (*lsarg++ = strtok(NULL, SEPARATORS)) );
-    forkexec(lsargs, 0, NULL, redirectout, outtarget);
+    *lsarg++ = strtok(lsbuf, SEPARATORS);                // tokenize ls command string
+    while( (*lsarg++ = strtok(NULL, SEPARATORS)) );      // fill rest with NULL
+    forkexec(lsargs, 0, NULL, redirectout, outtarget);   // forkexec ls command array
 }
 
+/*
+    Forks and executes the original environ command code in the child.
+*/
 void printEnv(int redirectout, char *outtarget)
 {
     pid_t childPid;
@@ -204,34 +207,24 @@ void printEnv(int redirectout, char *outtarget)
         case -1:
             perror("Fork error");
             break;
-        case 0:
-            if (access(outtarget, F_OK) == -1)
+        case 0:                                                                   // in child
+            if (access(outtarget, F_OK) == -1)                                    // check whether file exists, create if doesn't
             {
                 FILE* out = fopen(outtarget, "w");
                 fclose(out);
             }
-            if (redirectout == 1)
+            if (redirectout == 1 || redirectout == 2)                            // if redirectout flag is on
             {
-                if (access(outtarget, W_OK) == 0)
-                    freopen(outtarget, "w", stdout);
+                if (access(outtarget, W_OK) == 0)                                // check for write access then set desired mode
+                    freopen(outtarget, redirectout == 1 ? "w" : "a", stdout);    // according to flag
                 else
                 {
-                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
+                    fprintf(stderr, "%s: cannot write to file\n", outtarget);   // else print to stderr
                     return;
                 }
             }
 
-            if (redirectout == 2)
-            {
-                if (access(outtarget, W_OK) == 0)
-                    freopen(outtarget, "a", stdout);
-                else
-                {
-                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
-                    return;
-                }
-            }
-
+            // use pointer arithmetic to loop through environ
             char **env = environ;
             while (*env)
                 printf("%s\n", *env++);
@@ -260,50 +253,38 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
         case 0:
             // child process executes other commands with execvp
             // then exits
-            if (redirectin)
+            if (redirectin)                                                     // if redirect in flag on
             {
-                if (access(intarget, F_OK | R_OK) == 0)
+                if (access(intarget, F_OK | R_OK) == 0)                         // if file exists and can be read from, redirect stdin
                     freopen(intarget, "r", stdin);
-                else if (access(intarget, F_OK) == -1)
+                else if (access(intarget, F_OK) == -1)                         // if file doesn't exist, print to stderr and return
                 {
                     fprintf(stderr, "%s: file does not exist\n", intarget);
                     return;
                 }
-                else
+                else                                                           // if can't read from file, print to stderr and return
                 {
                     fprintf(stderr, "%s: cannot read from file\n", intarget);
                     return;
                 }
             }
-            if (redirectout == 1 || redirectout == 2)
+            if (redirectout == 1 || redirectout == 2)                             // if redirectout flag triggered
             {
-                if (access(outtarget, F_OK) == -1)
+                if (access(outtarget, F_OK) == -1)                               // check if file exists, create if not
                 {
                     FILE* out = fopen(outtarget, "w");
                     fclose(out);
                 }
-            }
-            if (redirectout == 1)
-            {
-                if (access(outtarget, W_OK) == 0)
-                    freopen(outtarget, "w", stdout);
-                else
+
+                if (access(outtarget, W_OK) == 0)                               // if write access OK, redirect stdout
+                    freopen(outtarget, redirectout == 1 ? "w" : "a", stdout);   // set mode according to flags
+                else                                                            // else print to stderr and return
                 {
                     fprintf(stderr, "%s: cannot write to file\n", outtarget);
                     return;
                 }
             }
 
-            if (redirectout == 2)
-            {
-                if (access(outtarget, W_OK) == 0)
-                    freopen(outtarget, "a", stdout);
-                else
-                {
-                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
-                    return;
-                }
-            }
             execvp(argv[0], argv);
             exit(EXIT_SUCCESS);
         default:
