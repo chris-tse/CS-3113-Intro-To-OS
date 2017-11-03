@@ -45,7 +45,6 @@ int main(int argc, char **argv)
 
             arg = args;
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
-
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
 
             if (args[0])
@@ -60,11 +59,11 @@ int main(int argc, char **argv)
                     switch (res)
                     {
                         case 0:                                 // for each case
-                            if (firstIO < 0)
+                            if (firstIO < 0)                    // if firstIO is -1, mark this arg as first IO operator
                                 firstIO = i;
-                            redirectin = 1;
-                            intarget = *++arg;
-                            arg++;
+                            redirectin = 1;                     // set appropriate flag
+                            intarget = *++arg;                  // set next arg as the target
+                            arg++;                              // skip to next arg after target
                             break;
 
                         case 1:
@@ -81,8 +80,8 @@ int main(int argc, char **argv)
                             outtarget = *++arg;
                             arg++;
                             break;
-                        default:
-                            arg++;
+                        default:                                // if not an IO operator
+                            arg++;                              // move to next arg
                             break;
                     }
                     i++;
@@ -110,9 +109,9 @@ int main(int argc, char **argv)
                     continue;
                 }
 
-                if (!strcmp(args[0], "dir")) // dir command
+                if (!strcmp(args[0], "dir"))                   // dir command
                 {
-                    printDir(args, redirectout, outtarget);
+                    printDir(args, redirectout, outtarget);    // call printDir
                     continue;
                 }
 
@@ -129,25 +128,23 @@ int main(int argc, char **argv)
                 if (!strcmp(args[0], "quit")) // quit command
                     break;                    // break out of while input loop
 
-                // if none of the above, fork and exec the command
-                if (firstIO >= 0)
+                // if none of the above commands
+                if (firstIO >= 0)           // first check for presence of IO operators
                 {
+                    // if yes, create new arg array and initialize all to NULL
                     char *newArgs[MAX_ARGS] = { NULL };
+                    // copy contents of original args array to new array up to before first IO operator
                     for (int i = 0; i < firstIO; i++)
                     {
                         newArgs[i] = args[i];
                     }
+                    // forkexec new args array
                     forkexec(newArgs, redirectin, intarget, redirectout, outtarget);
                 }
-                else
+                else  // if not IO simply forkexec original args
                 {
                     forkexec(args, redirectin, intarget, redirectout, outtarget);
                 }
-
-
-
-                // memcpy(newArgs, args, firstIO*sizeof(char*));
-
             }
         }
     }
