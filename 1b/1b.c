@@ -13,6 +13,7 @@ extern char **environ;                   // environment array
 
 int isIOOp(char *arg);
 void printDir(char **args, int redirectout, char *outtarget);
+void printEnv(int redirectout, char *outtarget);
 void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
 
 int main(int argc, char **argv)
@@ -118,11 +119,9 @@ int main(int argc, char **argv)
                 if (!strcmp(args[0], "environ")) // environ command
                 {
                     // use pointer arithmetic to step through
-                    char **env = environ;
-                    while (*env)
-                        printf("%s\n", *env++);
-
+                    printEnv(redirectout, outtarget);
                     continue;
+
                 }
 
                 if (!strcmp(args[0], "quit")) // quit command
@@ -196,6 +195,53 @@ void printDir(char **args, int redirectout, char *outtarget)
     forkexec(lsargs, 0, NULL, redirectout, outtarget);
 }
 
+void printEnv(int redirectout, char *outtarget)
+{
+    pid_t childPid;
+
+    switch (childPid = fork())
+    {
+        case -1:
+            perror("Fork error");
+            break;
+        case 0:
+            if (access(outtarget, F_OK) == -1)
+            {
+                FILE* out = fopen(outtarget, "w");
+                fclose(out);
+            }
+            if (redirectout == 1)
+            {
+                if (access(outtarget, W_OK) == 0)
+                    freopen(outtarget, "w", stdout);
+                else
+                {
+                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
+                    return;
+                }
+            }
+
+            if (redirectout == 2)
+            {
+                if (access(outtarget, W_OK) == 0)
+                    freopen(outtarget, "a", stdout);
+                else
+                {
+                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
+                    return;
+                }
+            }
+
+            char **env = environ;
+            while (*env)
+                printf("%s\n", *env++);
+            exit(EXIT_SUCCESS);
+        default:
+            waitpid(childPid, NULL, WUNTRACED);
+    }
+
+}
+
 
 /*
     Performs a fork and execvp with the original args array passed in
@@ -215,11 +261,49 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
             // child process executes other commands with execvp
             // then exits
             if (redirectin)
-                freopen(intarget, "r", stdin);
+            {
+                if (access(intarget, F_OK | R_OK) == 0)
+                    freopen(intarget, "r", stdin);
+                else if (access(intarget, F_OK) == -1)
+                {
+                    fprintf(stderr, "%s: file does not exist\n", intarget);
+                    return;
+                }
+                else
+                {
+                    fprintf(stderr, "%s: cannot read from file\n", intarget);
+                    return;
+                }
+            }
+            if (redirectout == 1 || redirectout == 2)
+            {
+                if (access(outtarget, F_OK) == -1)
+                {
+                    FILE* out = fopen(outtarget, "w");
+                    fclose(out);
+                }
+            }
             if (redirectout == 1)
-                freopen(outtarget, "w", stdout);
+            {
+                if (access(outtarget, W_OK) == 0)
+                    freopen(outtarget, "w", stdout);
+                else
+                {
+                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
+                    return;
+                }
+            }
+
             if (redirectout == 2)
-                freopen(outtarget, "a", stdout);
+            {
+                if (access(outtarget, W_OK) == 0)
+                    freopen(outtarget, "a", stdout);
+                else
+                {
+                    fprintf(stderr, "%s: cannot write to file\n", outtarget);
+                    return;
+                }
+            }
             execvp(argv[0], argv);
             exit(EXIT_SUCCESS);
         default:
