@@ -8,3 +8,6 @@
 !makefile
 stuff/
 *.out
+.DS_Store
+*.tar.gz
+*.md
