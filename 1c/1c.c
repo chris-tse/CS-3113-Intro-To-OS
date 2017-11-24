@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <termios.h>
 
 #define BUFFER_SIZE 1024                     // max line buffer
 #define MAX_ARGS 64                          // max num of args
@@ -12,6 +13,7 @@
 extern char **environ;                   // environment array
 
 int isIOOp(char *arg);
+void set_pause();
 void printDir(char **args, int redirectout, char *outtarget);
 void printEnv(int redirectout, char *outtarget);
 void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
@@ -24,7 +26,13 @@ int main(int argc, char **argv)
     char **arg;                              // pointer to loop through args
     char *prompt = "amadeus > ";             // prompt text
     char dir[BUFFER_SIZE];                   // buffer for dir command
-
+    FILE* readme;
+    readme = fopen("readme", "r");
+    if (readme == NULL)
+    {
+        fprintf(stderr, "Error: Could not locate readme file");
+        exit(EXIT_FAILURE);
+    }
     char *clr[] = {"clear"};                 // clear terminal before taking in input
     forkexec(clr, 0, NULL, 0, NULL);
 
@@ -38,12 +46,12 @@ int main(int argc, char **argv)
         int redirectout = 0;                 // flag for stdout redirection
         char *outtarget;                     // string for stdout redirection src
         char *intarget;                      // string for stdin redirection src
+        int bg;                              // flag for & bg execution
 
         int firstIO = -1;
 
         if (fgets(buf, BUFFER_SIZE, stdin))  // read in a line of command
         {
-
             arg = args;
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
@@ -116,12 +124,35 @@ int main(int argc, char **argv)
                     continue;
                 }
 
+                if (!strcmp(args[0], "echo"))                   // echo command
+                {
+                    for (int i = 1; i < MAX_ARGS; i++) {
+                        if (args[i] != NULL) printf("%s ", args[i]);
+                        else break;
+                    }
+                    putchar('\n');
+                    continue;
+                }
+
                 if (!strcmp(args[0], "environ")) // environ command
                 {
                     // use pointer arithmetic to step through
                     printEnv(redirectout, outtarget);
                     continue;
+                }
 
+                if (!strcmp(args[0], "help"))           // help command
+                {
+                    int c;                              // variable for current char
+                    while((c = getc(readme)) != EOF)    // print chars from file until EOF
+                    {
+                        putchar(c);
+                    }
+                    rewind(readme);                     // rewind file pointer for repeated calls of help command
+                }
+
+                if (!strcmp(args[0], "pause")) {                // pause command
+                    set_pause();
                 }
 
                 if (!strcmp(args[0], "quit")) // quit command
@@ -147,13 +178,14 @@ int main(int argc, char **argv)
             }
         }
     }
-    exit(0);
+    fclose(readme);
+    exit(EXIT_SUCCESS);
 }
 
 /*
-    Returns 0 if <
-            1 if >
-            2 if >>
+    Returns 0 if "<",
+            1 if ">",
+            2 if ">>"
     else returns -1
 */
 int isIOOp(char *arg)
@@ -167,6 +199,19 @@ int isIOOp(char *arg)
     if (!strcmp(arg, ">>"))
         return 2;
     return -1;
+}
+
+void set_pause()
+{
+    struct termios tp, save;                    // terminal settings from termios.h
+    tcgetattr(STDIN_FILENO, &tp);               // get current temrinal settings
+    save = tp;                                  // save to restore later
+    tp.c_lflag &= ~ECHO;                        // disable echo flag
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &tp);    // set the attr
+    printf("Press Enter to continue...");
+    while (getchar() != '\n');                  // loop until 'Enter' is pressed
+    printf("\n");
+    tcsetattr(STDIN_FILENO, TCSANOW, &save);    // restore from saved attribute
 }
 
 /*
