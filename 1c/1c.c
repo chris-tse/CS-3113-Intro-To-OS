@@ -12,6 +12,7 @@
 
 extern char **environ;                   // environment array
 
+void mainLoop(FILE* src, int ifShell);
 int isIOOp(char *arg);
 void set_pause();
 void printDir(char **args, int redirectout, char *outtarget);
@@ -19,6 +20,33 @@ void printEnv(int redirectout, char *outtarget);
 void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
 
 int main(int argc, char **argv)
+{
+    FILE* batch;
+
+    if (argc > 1)
+    {
+        // do batch file and exit upon finish
+        if (access(argv[1], F_OK | R_OK) == 0)                         // if file exists and can be read from, redirect stdin
+            batch = fopen(argv[1], "r");
+        else if (access(argv[1], F_OK) == -1)                         // if file doesn't exist, print to stderr and return
+        {
+            fprintf(stderr, "%s: file does not exist\n", argv[1]);
+            exit(EXIT_FAILURE);
+        }
+        else                                                           // if can't read from file, print to stderr and return
+        {
+            fprintf(stderr, "%s: cannot read from file\n", argv[1]);
+            exit(EXIT_FAILURE);
+        }
+
+    }
+
+    if (batch != NULL) mainLoop(batch, 0);
+    else mainLoop(stdin, 1);
+    exit(EXIT_SUCCESS);
+}
+
+void mainLoop(FILE* src, int ifShell)
 {
     // initialize buffers and other arrays
     char buf[BUFFER_SIZE];                   // input buffer array
@@ -33,14 +61,15 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error: Could not locate readme file");
         exit(EXIT_FAILURE);
     }
-    char *clr[] = {"clear"};                 // clear terminal before taking in input
+
+    char* clr[1] = {"clear"};
     forkexec(clr, 0, NULL, 0, NULL);
 
     // continue reading input until quit command or redirected input source ends
-    while(!feof(stdin))
+    while(!feof(src))
     {
 
-        fputs(prompt, stdout);               // prompt user for commands
+        if (ifShell) fputs(prompt, stdout);               // prompt user for commands
 
         int redirectin = 0;                  // flag for stdin redirection
         int redirectout = 0;                 // flag for stdout redirection
@@ -50,8 +79,9 @@ int main(int argc, char **argv)
 
         int firstIO = -1;
 
-        if (fgets(buf, BUFFER_SIZE, stdin))  // read in a line of command
+        if (fgets(buf, BUFFER_SIZE, src))  // read in a line of command
         {
+            printf("Now executing: %s\n", buf);
             arg = args;
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
@@ -179,7 +209,7 @@ int main(int argc, char **argv)
         }
     }
     fclose(readme);
-    exit(EXIT_SUCCESS);
+    return;
 }
 
 /*
