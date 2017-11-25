@@ -9,7 +9,8 @@ This is a C shell that mimics features from the popular bash shell, including th
     - Implemented ability to execute batch files with `./1c.out <filename>`
     - Implemented background execution of processes with the `&` indicator
     - Implemented `echo <string>` for echoing to the screen
-    - I
+    - Implemented `pause` which will prompt for user to press `Enter` before continuing execution (useful for batch file execution)
+
 
 - 0.2.0
     - Replaces all usage of `system()` to execute unknown commands to using `fork()` and `exec()`
