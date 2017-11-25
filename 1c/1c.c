@@ -14,10 +14,11 @@ extern char **environ;                   // environment array
 
 void mainLoop(FILE* src, int ifShell);
 int isIOOp(char *arg);
+int isAmp(char *arg);
 void set_pause();
-void printDir(char **args, int redirectout, char *outtarget);
+void printDir(char **args, int redirectout, char *outtarget, int nowait);
 void printEnv(int redirectout, char *outtarget);
-void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget);
+void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget, int nowait);
 
 int main(int argc, char **argv)
 {
@@ -54,6 +55,7 @@ void mainLoop(FILE* src, int ifShell)
     char **arg;                              // pointer to loop through args
     char *prompt = "amadeus > ";             // prompt text
     char dir[BUFFER_SIZE];                   // buffer for dir command
+    int nowait = 0;
     FILE* readme;
     readme = fopen("readme", "r");
     if (readme == NULL)
@@ -63,25 +65,24 @@ void mainLoop(FILE* src, int ifShell)
     }
 
     char* clr[1] = {"clear"};
-    forkexec(clr, 0, NULL, 0, NULL);
+    forkexec(clr, 0, NULL, 0, NULL, 0);
 
     // continue reading input until quit command or redirected input source ends
     while(!feof(src))
     {
-
         if (ifShell) fputs(prompt, stdout);               // prompt user for commands
 
         int redirectin = 0;                  // flag for stdin redirection
         int redirectout = 0;                 // flag for stdout redirection
         char *outtarget;                     // string for stdout redirection src
         char *intarget;                      // string for stdin redirection src
-        int bg;                              // flag for & bg execution
+        int nowait = 0;                          // flag for & bg execution
+        int bgi = 0;                         // index of &
 
         int firstIO = -1;
 
         if (fgets(buf, BUFFER_SIZE, src))  // read in a line of command
         {
-            printf("Now executing: %s\n", buf);
             arg = args;
             *arg++ = strtok(buf, SEPARATORS);                // tokenize and put into args array
             while( (*arg++ = strtok(NULL, SEPARATORS)) );    // fill the remaining space in args with NULL
@@ -94,7 +95,7 @@ void mainLoop(FILE* src, int ifShell)
                 while(*arg)                                     // loop through args array and check for IO redirectors
                 {
                     int res = isIOOp(*arg);                     // check whether current arg is IO operator
-
+                    nowait = isAmp(*arg);
                     switch (res)
                     {
                         case 0:                                 // for each case
@@ -124,11 +125,20 @@ void mainLoop(FILE* src, int ifShell)
                             break;
                     }
                     i++;
+                    if (nowait == 0) bgi++;
                 }
 
+                if (nowait)
+                {
+                    char *newArgs = malloc(MAX_ARGS*sizeof(char*));
+                    memcpy(newArgs, args, (bgi)*sizeof(char*));
+                    memcpy(args, newArgs, MAX_ARGS*sizeof(char*));
+                }
+
+                printf("bg task?: %d\n", nowait);
                 if (!strcmp(args[0], "clr")) // clear command
                 {
-                    forkexec(clr, 0, NULL, 0, NULL);         // use clr command array from above
+                    forkexec(clr, 0, NULL, 0, NULL, 0);         // use clr command array from above
                     continue;
                 }
 
@@ -150,7 +160,7 @@ void mainLoop(FILE* src, int ifShell)
 
                 if (!strcmp(args[0], "dir"))                   // dir command
                 {
-                    printDir(args, redirectout, outtarget);    // call printDir
+                    printDir(args, redirectout, outtarget, nowait);    // call printDir
                     continue;
                 }
 
@@ -193,21 +203,21 @@ void mainLoop(FILE* src, int ifShell)
                 {
                     // if yes, create new arg array and initialize all to NULL
                     char *newArgs[MAX_ARGS] = { NULL };
+
                     // copy contents of original args array to new array up to before first IO operator
-                    for (int i = 0; i < firstIO; i++)
-                    {
-                        newArgs[i] = args[i];
-                    }
+                    memcpy(newArgs, args, firstIO*sizeof(char*));
+
                     // forkexec new args array
-                    forkexec(newArgs, redirectin, intarget, redirectout, outtarget);
+                    forkexec(newArgs, redirectin, intarget, redirectout, outtarget, nowait);
                 }
                 else  // if not IO simply forkexec original args
                 {
-                    forkexec(args, redirectin, intarget, redirectout, outtarget);
+                    forkexec(args, redirectin, intarget, redirectout, outtarget, nowait);
                 }
             }
         }
     }
+
     fclose(readme);
     return;
 }
@@ -231,6 +241,11 @@ int isIOOp(char *arg)
     return -1;
 }
 
+int isAmp(char *arg)
+{
+    return !strcmp(arg, "&") ? 1 : 0;
+}
+
 void set_pause()
 {
     struct termios tp, save;                    // terminal settings from termios.h
@@ -248,7 +263,7 @@ void set_pause()
     Takes in original args array and appends argument for dir command
     to "ls -al " string to be tokenzied and passed into execvp
 */
-void printDir(char **args, int redirectout, char *outtarget)
+void printDir(char **args, int redirectout, char *outtarget, int nowait)
 {
     char lsbuf[BUFFER_SIZE];                   // ls buffer for command string
     char *lsargs[MAX_ARGS];                    // pointer to tokenized ls command array
@@ -267,7 +282,7 @@ void printDir(char **args, int redirectout, char *outtarget)
 
     *lsarg++ = strtok(lsbuf, SEPARATORS);                // tokenize ls command string
     while( (*lsarg++ = strtok(NULL, SEPARATORS)) );      // fill rest with NULL
-    forkexec(lsargs, 0, NULL, redirectout, outtarget);   // forkexec ls command array
+    forkexec(lsargs, 0, NULL, redirectout, outtarget, nowait);   // forkexec ls command array
 }
 
 /*
@@ -314,12 +329,12 @@ void printEnv(int redirectout, char *outtarget)
 /*
     Performs a fork and execvp with the original args array passed in
 */
-void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget)
+void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char *outtarget, int nowait)
 {
-    pid_t childPid;
-
+    pid_t childPid, detached;
     switch(childPid = fork())
     {
+
         case -1:
             // If fork fails for any reason, print an error message
             // and break, returning to the input reading loop
@@ -365,6 +380,8 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
         default:
             // parent process will wait for child process to exit
             // before returning to input reading loop
-            waitpid(childPid, NULL, WUNTRACED);
+            // if nowait, detach child from parent
+            if (nowait) detached = setsid();
+            else waitpid(childPid, NULL, WUNTRACED);
     }
 }
