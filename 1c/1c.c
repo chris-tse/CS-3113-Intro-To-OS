@@ -190,6 +190,7 @@ void mainLoop(FILE* src, int ifShell)
                         putchar(c);
                     }
                     rewind(readme);                     // rewind file pointer for repeated calls of help command
+                    continue;
                 }
 
                 if (!strcmp(args[0], "pause")) {                // pause command
