@@ -1,6 +1,0 @@
-dir
-echo test
-pause
-cd ..
-dir 1a
-pause
