@@ -153,6 +153,7 @@ void mainLoop(FILE* src, int ifShell)
                         chdir(args[1]);                  // otherwise change process directory
                         char pathbuf[BUFFER_SIZE];       // and copy cwd into a buffer
                         getcwd(pathbuf, BUFFER_SIZE);
+                        printf("pathbuf: %s\n", pathbuf);
                         setenv("PWD", pathbuf, 1);       // set PWD to buffer containing cwd
                     }
                     continue;
@@ -193,6 +194,7 @@ void mainLoop(FILE* src, int ifShell)
 
                 if (!strcmp(args[0], "pause")) {                // pause command
                     set_pause();
+                    continue;
                 }
 
                 if (!strcmp(args[0], "quit")) // quit command
