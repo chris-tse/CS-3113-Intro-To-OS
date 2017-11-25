@@ -1,2 +1,10 @@
-Test readme
-onii-chan
+AMADEUS Shell v0.3.0
+
+This is a C shell with many features that mimic the popular bash shell,
+including IO redirection.
+
+VERSION
+This manual documents AMADEUS 0.3.0 as of 2017-11-25
+
+AUTHOR
+Christopher Tse - University of Oklahoma
