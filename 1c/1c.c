@@ -67,6 +67,8 @@ void mainLoop(FILE* src, int ifShell)
     char* clr[1] = {"clear"};
     forkexec(clr, 0, NULL, 0, NULL, 0);
 
+    if (ifShell) printf("Type 'help' to view the manual\n");
+
     // continue reading input until quit command or redirected input source ends
     while(!feof(src))
     {
@@ -135,7 +137,6 @@ void mainLoop(FILE* src, int ifShell)
                     memcpy(args, newArgs, MAX_ARGS*sizeof(char*));
                 }
 
-                printf("bg task?: %d\n", nowait);
                 if (!strcmp(args[0], "clr")) // clear command
                 {
                     forkexec(clr, 0, NULL, 0, NULL, 0);         // use clr command array from above
