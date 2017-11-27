@@ -185,12 +185,15 @@ void mainLoop(FILE* src, int ifShell)
 
                 if (!strcmp(args[0], "help"))           // help command
                 {
+                    putchar('\n');
                     int c;                              // variable for current char
                     while((c = getc(readme)) != EOF)    // print chars from file until EOF
                     {
                         putchar(c);
                     }
                     rewind(readme);                     // rewind file pointer for repeated calls of help command
+                    putchar('\n');
+                    putchar('\n');
                     continue;
                 }
 
