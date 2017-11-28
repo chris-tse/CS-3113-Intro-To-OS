@@ -1,7 +1,7 @@
 # AMADEUS Shell
 v1.3
 
-This is a C shell that mimics features from the popular bash shell, including the ability to execute batch files, redirect IO, and will fall back to the underlying system shell in the case where it does not recognize a command.
+This is a C shell that mimics features from the popular bash shell, including the ability to execute batch files, redirect IO, and falls back to the underlying system shell in the case where it does not recognize a command.
 
 ## Requirements
 
@@ -10,7 +10,7 @@ The project was developed on:
 - `make` >= 3.81
 - `gcc` >= 6.3
 
-Problems may occur if versions used are older than stated above
+Problems may occur if versions used are older than stated above.
 
 
 ## Installation
@@ -36,19 +36,19 @@ The shell can also execute batch files which can be passed in as a command line 
 $ ./1c batchfile
 ```
 ### Commands
-Here is a list of all currently implemented commands. Any commands not on this list will be passed to the system shell.
+Here is a list of all currently implemented commands. Any commands not on this list are passed to the system shell.
 
 - `clr` - clears the screen
 - `dir` - prints the current directory
-- `dir <directory>` - lists the contents of specified directory. If no directory is given, this command will print the contents of the current directory
-- `cd <directory>` - navigates to the specified directory. If no directory is given, this command will print the current working directory
+- `dir <directory>` - lists the contents of specified directory. If no directory is given, this command prints the contents of the current directory
+- `cd <directory>` - navigates to the specified directory. If no directory is given, this command prints the current working directory
 - `environ` - prints out the current environment variables
 - `echo <text>` - prints out the given text onto the screen
 - `pause` - displays the text "Press Enter to continue..." and waits for user to press Enter before continuing execution
 - `quit` - exits the shell
 
 ### Background Execution
-A process can be executed in the background using the `&` operator. Instead of waiting for execution of current command to finish before returning to prompt, it will immediately return to prompt without execution finishing.
+A process can be executed in the background using the `&` operator. Instead of waiting for execution of current command to finish before returning to prompt, it immediately returns to prompt without execution finishing.
 
 Example:
 ```
@@ -58,7 +58,7 @@ amadeus>          // did not wait 2 seconds before appearing
 
 ### Input/Output Redirection
 
-These symbols will change the behaviour of the input and output of the shell.
+These symbols change the behaviour of the input and output of the shell.
 
 #### Redirecting Input
 To redirect input from a separate file, use the `<` operator.
@@ -96,7 +96,7 @@ Welcome user
 Welcome user
 ```
 
-*Note that the `echo` command in the current implementation of the AMADEUS shell will not redirect output, and will instead print the operator to the screen as text
+*Note that the `echo` command in the current implementation of the AMADEUS shell do not redirect output, and instead print the operator to the screen as text
 
 ## Release History
 
@@ -104,7 +104,7 @@ Welcome user
     - Implemented ability to execute batch files with `./1c.out <filename>`
     - Implemented background execution of processes with the `&` indicator
     - Implemented `echo <string>` for echoing to the screen
-    - Implemented `pause` which will prompt for user to press `Enter` before continuing execution (useful for batch file execution)
+    - Implemented `pause` which prompts for user to press `Enter` before continuing execution (useful for batch file execution)
 
 
 - 0.2.0
