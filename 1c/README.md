@@ -38,6 +38,7 @@ $ ./1c batchfile
 ### Commands
 Here is a list of all currently implemented commands. Any commands not on this list are passed to the system shell.
 
+- `help` - displays a readme with commands and usage help
 - `clr` - clears the screen
 - `dir` - prints the current directory
 - `dir <directory>` - lists the contents of specified directory. If no directory is given, this command prints the contents of the current directory
