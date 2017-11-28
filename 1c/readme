@@ -1,10 +1,38 @@
 AMADEUS Shell v0.3.0
 
-This is a C shell with many features that mimic the popular bash shell,
-including IO redirection.
+INSTALLATION
+    To compile this shell use make with the accompanied makefile
+
+    $ make
+
+    To run the shell, execute the compiled binary
+
+    $ ./1c
+
+DESCRIPTION
+    This is a C shell that mimics features from the popular bash shell, including
+    the ability to execute batch files, redirect IO, and will fall back to the
+    underlying system shell in the case where it does not recognize a command.
+
+COMMANDS
+    help - displays a readme with commands and usage help
+    clr - clears the screen
+    dir - prints the current directory
+    dir <directory> - lists the contents of specified directory. If no
+                        directory is given this command prints the contents
+                        of the current directory
+    cd <directory> - navigates to the specified directory. If no directory
+                       is given, this command prints the current working
+                       directory
+    environ - prints out the current environment variables
+    echo <text> - prints out the given text onto the screen
+    pause - displays the text "Press Enter to continue..." and waits for user
+              to press Enter before continuing
+              execution
+    quit - exits the shell
 
 VERSION
-This manual documents AMADEUS 0.3.0 as of 2017-11-25
+    This manual documents AMADEUS 0.3.0 as of 2017-11-25
 
 AUTHOR
-Christopher Tse - University of Oklahoma
+    Christopher Tse - University of Oklahoma
