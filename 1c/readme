@@ -1,38 +1,106 @@
 AMADEUS Shell v0.3.0
 
-INSTALLATION
-    To compile this shell use make with the accompanied makefile
-
-    $ make
-
-    To run the shell, execute the compiled binary
-
-    $ ./1c
-
 DESCRIPTION
-    This is a C shell that mimics features from the popular bash shell, including
-    the ability to execute batch files, redirect IO, and will fall back to the
-    underlying system shell in the case where it does not recognize a command.
+        This is a C shell that mimics features from the popular bash shell,
+        including the ability to execute batch files, redirect IO, and will
+        fall back to the underlying system shell in the case where it does
+        not recognize a command.
+
+INSTALLATION
+        To compile this shell use make with the accompanied makefile
+
+        $ make
+
+        To run the shell, execute the compiled binary
+
+        $ ./1c
+
+        To run the shell with a batch file, include the file name as a command
+        line argument to the binary
+
+        $ ./1c batchfile
 
 COMMANDS
-    help - displays a readme with commands and usage help
-    clr - clears the screen
-    dir - prints the current directory
-    dir <directory> - lists the contents of specified directory. If no
+        help - displays a readme with commands and usage help
+
+        clr - clears the screen
+
+        dir - prints the current directory
+
+        dir <directory> - lists the contents of specified directory. If no
                         directory is given this command prints the contents
                         of the current directory
-    cd <directory> - navigates to the specified directory. If no directory
-                       is given, this command prints the current working
-                       directory
-    environ - prints out the current environment variables
-    echo <text> - prints out the given text onto the screen
-    pause - displays the text "Press Enter to continue..." and waits for user
-              to press Enter before continuing
-              execution
-    quit - exits the shell
+
+        cd <directory> - navigates to the specified directory. If no directory
+                        is given, this command prints the current working
+                        directory
+
+        environ - prints out the current environment variables
+
+        echo <text> - prints out the given text onto the screen
+
+        pause - displays the text "Press Enter to continue..." and waits for
+                user to press Enter before continuing execution
+
+        quit - exits the shell
+
+BACKGROUND EXECUTION
+        A process can be executed in the background using the & operator.
+        Instead of waiting for execution of current command to finish before
+        returning to prompt, it immediately returns to prompt without execution
+        finishing.
+
+        Example:
+
+            amadeus> sleep 2 &
+            amadeus>       // returns to shell without waiting for sleep to end
+
+INPUT/OUTPUT REDIRECTION
+        These operators change the behaviour of the input and output of the
+        shell.
+    Input Redirection
+        To redirect input from a file use the < operator.
+
+        Example:
+
+            amadeus> cat < greetings.txt
+            Welcome user
+
+    Output Redirection (Overwrite)
+        To redirect output and overwrite contents at destination file use the >
+        operator.
+
+        Example:
+
+            amadeus> cat textfile
+            This is some text
+            amadeus> dir > textfile
+            amadeus> cat textfile
+            total 136
+            drwxr-xr-x  14 christophertse  staff    476 Nov 27 23:17 .
+            drwxr-xr-x  12 christophertse  staff    408 Nov 16 14:26 ..
+            ... // rest of dir output
+
+    Output Redirection (Append)
+        To redirect output and append to the destination file use the >>
+        operator.
+
+        Example:
+
+            amadeus> cat greetings.txt
+            Welcome user
+            amadeus> cat greetings.txt >> newgreet
+            amadeus> cat greetings.txt >> newgreet
+            amadeus> cat newgreet
+            Welcome user
+            Welcome user
+
+        Note that the echo command in the current implementation of the
+        AMADEUS shell does not redirect output, and will instead print the
+        operator to the screen as text.
 
 VERSION
-    This manual documents AMADEUS 0.3.0 as of 2017-11-25
+        This manual documents AMADEUS 0.3.0 as of 2017-11-25
 
 AUTHOR
-    Christopher Tse - University of Oklahoma
+        Christopher Tse - University of Oklahoma
