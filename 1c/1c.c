@@ -185,7 +185,7 @@ void mainLoop(FILE* src, int ifShell)
 
                 if (!strcmp(args[0], "help"))           // help command
                 {
-                    putchar('\n');
+                    forkexec(clr, 0, NULL, 0, NULL, 0);
                     int c;                              // variable for current char
                     while((c = getc(readme)) != EOF)    // print chars from file until EOF
                     {
