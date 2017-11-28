@@ -53,7 +53,7 @@ void mainLoop(FILE* src, int ifShell)
     char buf[BUFFER_SIZE];                   // input buffer array
     char *args[MAX_ARGS];                    // pointer to tokenized input array
     char **arg;                              // pointer to loop through args
-    char *prompt = "amadeus > ";             // prompt text
+    char *prompt = "amadeus> ";             // prompt text
     char dir[BUFFER_SIZE];                   // buffer for dir command
     int nowait = 0;
     FILE* readme;
@@ -346,7 +346,7 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
             // If fork fails for any reason, print an error message
             // and break, returning to the input reading loop
             perror("Fork error");
-            break;
+            exit(EXIT_FAILURE);
         case 0:
             // child process executes other commands with execvp
             // then exits
@@ -357,12 +357,12 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
                 else if (access(intarget, F_OK) == -1)                         // if file doesn't exist, print to stderr and return
                 {
                     fprintf(stderr, "%s: file does not exist\n", intarget);
-                    return;
+                    exit(EXIT_FAILURE);
                 }
                 else                                                           // if can't read from file, print to stderr and return
                 {
                     fprintf(stderr, "%s: cannot read from file\n", intarget);
-                    return;
+                    exit(EXIT_FAILURE);
                 }
             }
             if (redirectout == 1 || redirectout == 2)                             // if redirectout flag triggered
@@ -378,7 +378,7 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
                 else                                                            // else print to stderr and return
                 {
                     fprintf(stderr, "%s: cannot write to file\n", outtarget);
-                    return;
+                    exit(EXIT_FAILURE);
                 }
             }
 
