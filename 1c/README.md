@@ -74,8 +74,10 @@ To redirect output and overwrite contents at destination, use the `>` operator.
 
 Example:
 ```
-amadeus> dir > dirout
-amadeus> cat dirout
+amadeus> cat textfile
+This is some text
+amadeus> dir > textfile
+amadeus> cat textfile
 total 136
 drwxr-xr-x  14 christophertse  staff    476 Nov 27 23:17 .
 drwxr-xr-x  12 christophertse  staff    408 Nov 16 14:26 ..
