@@ -59,7 +59,7 @@ amadeus>          // did not wait 2 seconds before appearing
 
 ### Input/Output Redirection
 
-These symbols change the behaviour of the input and output of the shell.
+These operators change the behaviour of the input and output of the shell.
 
 #### Redirecting Input
 To redirect input from a separate file, use the `<` operator.
@@ -97,7 +97,7 @@ Welcome user
 Welcome user
 ```
 
-*Note that the `echo` command in the current implementation of the AMADEUS shell do not redirect output, and instead print the operator to the screen as text
+*Note that the `echo` command in the current implementation of the AMADEUS shell does not redirect output, and will instead print the operator to the screen as text
 
 ## Release History
 
