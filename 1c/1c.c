@@ -23,7 +23,6 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
 int main(int argc, char **argv)
 {
     FILE* batch;
-
     if (argc > 1)
     {
         // do batch file and exit upon finish
