@@ -22,26 +22,26 @@ void forkexec(char **argv, int redirectin, char *intarget, int redirectout, char
 
 int main(int argc, char **argv)
 {
-    FILE* batch;
-    if (argc > 1)
+    FILE* batch;         // FILE pointer for possible batch file input
+    if (argc > 1)        // if argv is longer than 1, there is batchfile input
     {
-        // do batch file and exit upon finish
-        if (access(argv[1], F_OK | R_OK) == 0)                         // if file exists and can be read from, redirect stdin
+        if (access(argv[1], F_OK | R_OK) == 0) // if file exists and can be read from, redirect stdin
             batch = fopen(argv[1], "r");
-        else if (access(argv[1], F_OK) == -1)                         // if file doesn't exist, print to stderr and return
+        else if (access(argv[1], F_OK) == -1)  // if file doesn't exist, print to stderr and return
         {
             fprintf(stderr, "%s: file does not exist\n", argv[1]);
             exit(EXIT_FAILURE);
         }
-        else                                                           // if can't read from file, print to stderr and return
+        else                                   // if can't read from file, print to stderr and return
         {
             fprintf(stderr, "%s: cannot read from file\n", argv[1]);
             exit(EXIT_FAILURE);
         }
-
     }
 
+    // if batch file exists, run main loop with batch file as input source
     if (batch != NULL) mainLoop(batch, 0);
+    // else run it with stdin as input source
     else mainLoop(stdin, 1);
     exit(EXIT_SUCCESS);
 }
@@ -55,18 +55,24 @@ void mainLoop(FILE* src, int ifShell)
     char *prompt = "amadeus> ";             // prompt text
     char dir[BUFFER_SIZE];                   // buffer for dir command
     int nowait = 0;
-    FILE* readme;
-    readme = fopen("readme", "r");
-    if (readme == NULL)
-    {
-        fprintf(stderr, "Error: Could not locate readme file");
-        exit(EXIT_FAILURE);
-    }
 
+    // clear screen on initial run
     char* clr[1] = {"clear"};
     forkexec(clr, 0, NULL, 0, NULL, 0);
 
-    if (ifShell) printf("Type 'help' to view the manual\n");
+    // attempt to load readme file for help command
+    FILE* readme;
+    readme = fopen("readme", "r");
+    if (readme == NULL) // if readme was unable to be opened print warning
+    {
+        printf("Warning: Could not locate readme file\n");
+    }
+    // else print hint if not in batch file mode
+    else if (ifShell) printf("Type 'help' to view the manual\n");
+
+
+
+
 
     // continue reading input until quit command or redirected input source ends
     while(!feof(src))
@@ -184,14 +190,20 @@ void mainLoop(FILE* src, int ifShell)
 
                 if (!strcmp(args[0], "help"))           // help command
                 {
-                    forkexec(clr, 0, NULL, 0, NULL, 0);
+                    // if readme was not found from initial start up
+                    if (readme == NULL)
+                    {
+                        fprintf(stderr, "Error: Readme file not found\n");
+                        continue; // skip rest of help function
+                    }
+                    forkexec(clr, 0, NULL, 0, NULL, 0); // clear screen before printing
                     int c;                              // variable for current char
                     while((c = getc(readme)) != EOF)    // print chars from file until EOF
                     {
                         putchar(c);
                     }
                     rewind(readme);                     // rewind file pointer for repeated calls of help command
-                    printf("\n\n");
+                    printf("\n\n");                     // spacing after end of readme
                     continue;
                 }
 
@@ -246,6 +258,9 @@ int isIOOp(char *arg)
     return -1;
 }
 
+/**
+ * Returns 1 if passed in char is &, else 0
+ **/
 int isAmp(char *arg)
 {
     return !strcmp(arg, "&") ? 1 : 0;
@@ -305,7 +320,7 @@ void printEnv(int redirectout, char *outtarget)
         case 0:                                                                   // in child
             if (access(outtarget, F_OK) == -1)                                    // check whether file exists, create if doesn't
             {
-                FILE* out = fopen(outtarget, "w");
+                FILE* out = fopen(outtarget, "w");                                // create destination file
                 fclose(out);
             }
             if (redirectout == 1 || redirectout == 2)                            // if redirectout flag is on
