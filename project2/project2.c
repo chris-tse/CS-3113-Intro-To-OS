@@ -113,8 +113,12 @@ void mainLoop(mode algmode, char **mem, FILE *script)
         allocate = best_fit_allocate;
     else if (algmode == NEXTFIT)
         allocate = next_fit_allocate;
-    // else
-    //     allocate = buddy_allocate;
+    else
+    {
+        // allocate = buddy_allocate;
+        printf("Sorry, buddy algorithm not implemented\n");
+        exit(EXIT_FAILURE);
+    }
     while(!feof(script))
     {
         if (fgets(buf, BUFFER_SIZE, script))
