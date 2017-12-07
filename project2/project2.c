@@ -23,7 +23,7 @@ Queue *rear = NULL;
 
 typedef enum {BESTFIT, FIRSTFIT, NEXTFIT, BUDDY} mode;
 
-void mainLoop(mode algmode, char **mem, FILE *script);
+void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script);
 void fill_array(char **arr, long int size, char *str);
 void print_array(char **arr, long int maxsize);
 
@@ -92,18 +92,18 @@ int main(int argc, char** argv)
         script = fopen(argv[3], "r");            
     }
     
-    mainLoop(algmode, mem, script);
+    mainLoop(algmode, mem, maxsize, script);
     free(mem);
     exit(EXIT_SUCCESS);
 }
 
-void mainLoop(mode algmode, char **mem, FILE *script)
+void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
 {
     printf("Start main loop\n");
     char buf[BUFFER_SIZE];
     char *tokens[MAX_TOKENS];
     char **token;
-    
+    nextfitptr = mem;
     long (*allocate)(char **mem, long int size, char *label);
     
     if (algmode == FIRSTFIT)
@@ -129,13 +129,30 @@ void mainLoop(mode algmode, char **mem, FILE *script)
                 {
                     if (!strcmp(tokens[1], "AVAILABLE"))
                     {
+                        char *prevLabel = malloc(sizeof(char) * 16);
+                        char *currLabel = malloc(sizeof(char) * 16);
+                        strcpy(prevLabel, mem[0]);
+                        strcpy(currLabel, mem[0]);
                         
-                        
-                        char *currLabel = NULL;
-                        char *prevLabel = "NOTHING";
-                        
-                        currLabel = *currBlockLoc;
-                        
+                        for (int i = 0; i < maxsize; i++)
+                        {
+                            printf("Current label: %s\n", mem[i]);
+                            strcpy(currLabel, mem[i]);
+                            if (!strcmp(currLabel, "NULL"))
+                            {
+                                long int currSize = 0;
+                                long int currPos = i;
+                                while (!strcmp(currLabel, "NULL") && i < maxsize)
+                                {
+                                    currSize++;
+                                    strcpy(currLabel, mem[i++]);
+                                }
+                                printf("(%ld, %ld) ", currSize, currPos);
+                            }
+                            
+                            strcpy(prevLabel, currLabel);
+                        }  
+                        putchar('\n'); 
                     }
                     else if (!strcmp(tokens[1], "ASSIGNED"))
                     {
@@ -256,6 +273,12 @@ long first_fit_allocate(char **mem, long int size, char *label)
     return ret;
     
 }
+
+long next_fit_allocate(char **mem, long int size, char *label)
+{
+    
+}
+
 
 long* release(char **mem, char *label)
 {
