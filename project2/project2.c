@@ -10,7 +10,7 @@
 // tree node struct for buddy system
 typedef struct Node {
     char *label;
-    long int size;
+    long size;
     struct Node *left, *right;
 } Node;
 
@@ -23,19 +23,20 @@ Queue *rear = NULL;
 
 typedef enum {BESTFIT, FIRSTFIT, NEXTFIT, BUDDY} mode;
 
-void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script);
-void fill_array(char **arr, long int size, char *str);
-void print_array(char **arr, long int maxsize);
+void mainLoop(mode algmode, char **mem, FILE *script);
+void fill_array(char **arr, long size, char *str);
+void print_array(char **arr, long maxsize);
 
-long best_fit_allocate(char **mem, long int size, char *label);
-long first_fit_allocate(char **mem, long int size, char *label);
-long next_fit_allocate(char **mem, long int size, char *label);
-long buddy_allocate(char **mem, long int size, char* label);
+long best_fit_allocate(char **mem, long size, char *label);
+long first_fit_allocate(char **mem, long size, char *label);
+long next_fit_allocate(char **mem, long size, char *label);
+long buddy_allocate(char **mem, long size, char* label);
 
 long* release(char **mem, char *label);
 
 
-char **nextfitptr;
+long nextfitindex;
+long memsize;
 
 int main(int argc, char** argv)
 {
@@ -48,13 +49,13 @@ int main(int argc, char** argv)
     }
     
     char* eptr; // temp pointer
-    long int maxsize = strtol(argv[2], &eptr, 10); // parse maxsize command line argument
-    char **mem = malloc(sizeof(char *) * maxsize + 1);
-    fill_array(mem, maxsize, "NULL");
-    print_array(mem, maxsize);
+    memsize = strtol(argv[2], &eptr, 10); // parse memsize command line argument
+    char **mem = malloc(sizeof(char *) * memsize + 1);
+    fill_array(mem, memsize, "NULL");
+    // print_array(mem, memsize);
     // Node *root = malloc(sizeof(Node));
     // root->label = "NULL";
-    // root->size = maxsize;
+    // root->size = memsize;
     // root->left = NULL;
     // root->right = NULL;
     
@@ -92,26 +93,26 @@ int main(int argc, char** argv)
         script = fopen(argv[3], "r");            
     }
     
-    mainLoop(algmode, mem, maxsize, script);
+    mainLoop(algmode, mem, script);
     free(mem);
     exit(EXIT_SUCCESS);
 }
 
-void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
+void mainLoop(mode algmode, char **mem, FILE *script)
 {
-    printf("Start main loop\n");
+    //printf("Start main loop\n");
     char buf[BUFFER_SIZE];
     char *tokens[MAX_TOKENS];
     char **token;
-    nextfitptr = mem;
-    long (*allocate)(char **mem, long int size, char *label);
+    nextfitindex = 0;
+    long (*allocate)(char **mem, long size, char *label);
     
     if (algmode == FIRSTFIT)
         allocate = first_fit_allocate;
-    // else if (algmode == FIRSTFIT)
-    //     allocate = first_fit_allocate;
-    // else if (algmode == NEXTFIT)
-    //     allocate = next_fit_allocate;
+    else if (algmode == BESTFIT)
+        allocate = best_fit_allocate;
+    else if (algmode == NEXTFIT)
+        allocate = next_fit_allocate;
     // else
     //     allocate = buddy_allocate;
     while(!feof(script))
@@ -134,15 +135,15 @@ void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
                         strcpy(prevLabel, mem[0]);
                         strcpy(currLabel, mem[0]);
                         
-                        for (int i = 0; i < maxsize; i++)
+                        for (int i = 0; i < memsize; i++)
                         {
-                            printf("Current label: %s\n", mem[i]);
+                            // printf("Current label: %s\n", mem[i]);
                             strcpy(currLabel, mem[i]);
                             if (!strcmp(currLabel, "NULL"))
                             {
-                                long int currSize = 0;
-                                long int currPos = i;
-                                while (!strcmp(currLabel, "NULL") && i < maxsize)
+                                long currSize = 0;
+                                long currPos = i;
+                                while (!strcmp(currLabel, "NULL") && i < memsize)
                                 {
                                     currSize++;
                                     strcpy(currLabel, mem[i++]);
@@ -173,14 +174,14 @@ void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
                     if (tokens[1] && tokens[2])
                     {
                         char *eptr;
-                        long int size = strtol(tokens[2], &eptr, 10);
+                        long size = strtol(tokens[2], &eptr, 10);
                         //printf("Allocating label %s with size %ld\n", tokens[1], size);
                         long res = allocate(mem, size, tokens[1]);
                         if (res < 0)
                             printf("FAIL REQUEST %s %ld\n", tokens[1], size);
                         else 
                         {
-                            printf("ALLOCATED %s %ld\n", tokens[1], (char **)res + size - mem);
+                            printf("ALLOCATED %s %ld\n", tokens[1], res);
                         }
                     }
                     else
@@ -191,11 +192,15 @@ void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
                     if (tokens[1])
                     {
                         long *res = release(mem, tokens[1]);
-                        if (res[0] > 0)
-                            printf("FREE %s %ld %ld\n", tokens[1], res[0], res[1]);
-                        else
+                        if (res[1] < 0)
                             printf("FAIL RELEASE %s\n", tokens[1]);
+                        else
+                            printf("FREE %s %ld %ld\n", tokens[1], res[0], res[1]);
                     }
+                }
+                else if(!strcmp(tokens[0], "PRINT"))
+                {
+                    print_array(mem, memsize);
                 }
             }
         }
@@ -203,7 +208,7 @@ void mainLoop(mode algmode, char **mem, long int maxsize, FILE *script)
     
 }
 
-void fill_array(char **arr, long int size, char *str)
+void fill_array(char **arr, long size, char *str)
 {
     
     for (int i=0; i<size; i++) {
@@ -220,81 +225,171 @@ void fill_array(char **arr, long int size, char *str)
     arr[size] = NULL;
 }
 
-void print_array(char **arr, long int maxsize)
+void print_array(char **arr, long maxsize)
 {
     char **ptr = arr;
-    long int i = 0;
+    long i = 0;
     while(*ptr) 
         printf("%s, %ld\n", *ptr++, i++);      
 }
 
-long first_fit_allocate(char **mem, long int size, char *label)
+long first_fit_allocate(char **mem, long size, char *label)
 {
-    char **currBlock = mem;
-    char **freeSearch;
-    int broke = 0;
-    long ret = -1;
-    
-    while(*currBlock)
+    for (int i = 0; i < memsize; i++)
     {
-        if (!strcmp(*currBlock, "NULL"))
+        if (!strcmp(mem[i], "NULL") && size + i < memsize)
         {
-            freeSearch = currBlock;
-            long int i = 0;
-            while(i < size)
+            long available = 0;
+            for (int j = i; j < size + i; j++)
             {
-                // go through and search if all "NULL"
-                //printf("Checking block with label %s\n", *freeSearch);
-                if (!(*freeSearch) || strcmp(*freeSearch, "NULL"))
-                {
-                    broke = 1;
+                if (!strcmp(mem[i], "NULL")) {
+                    available++;
+                    if (available >= size) break;
+                }
+                else 
+                    break;
+            }
+            if (available >= size)
+            {
+                for (int j = i; j < size + i; j++)
+                    strcpy(mem[j], label);
+                
+                return i;
+            }
+        }
+    }
+
+    return -1;
+    
+}
+
+long next_fit_allocate(char **mem, long size, char *label)
+{
+    //printf("Start next fit\n");
+    int startedAt = nextfitindex;
+    // printf("Start from current nextfitindex %ld to end\n", nextfitindex);
+    for (;nextfitindex < memsize; nextfitindex++)
+    {
+        // printf("current nextfitindex %ld is %s\n", nextfitindex, mem[nextfitindex]);
+        // printf("size + nextfitindex < memsize: %d\n", size + nextfitindex <= memsize);
+        if (!strcmp(mem[nextfitindex], "NULL") && size + nextfitindex <= memsize)
+        {
+            // printf("Found \"NULL\"\n");
+            long available = 0;
+            for (int i = nextfitindex; i <= size + nextfitindex; i++)
+            { 
+                // printf("size + nextfitindex: %ld\n", size + nextfitindex);  
+                //printf("Comparing %s\n", mem[i]);
+                if (!strcmp(mem[i], "NULL")) {
+                    available++;
+                    if (available >= size) break;
+                }
+                else {
+                    printf("BROKE\n");
                     break;
                 }
-                i++;
-                freeSearch++;
             }
-            if (!broke)
+            if (available >= size)
             {
+                for (int j = nextfitindex; j < size + nextfitindex; j++)
+                    strcpy(mem[j], label);
                 
-                ret = (long) currBlock;
-                //printf("Inserting %s at location %ld\n", label, ret - (long) mem);
-                for (long int i = 0; i < size; i++, currBlock++)
-                {
-                    strcpy(*currBlock, label);
-                }
-                return ret;
+                return nextfitindex;
             }
-            else
-                currBlock++;
         }
-        else
-            currBlock++;
     }
-    return ret;
-    
+    //printf("Start from 0 to startedAt\n");
+    for (nextfitindex = 0; nextfitindex < startedAt; nextfitindex++)
+    {
+        //printf("current nextfitindex %ld is %s\n", nextfitindex, mem[nextfitindex]);
+        //printf("size + nextfitindex < memsize: %d\n", size + nextfitindex <= memsize);
+        if (!strcmp(mem[nextfitindex], "NULL") && size + nextfitindex <= memsize)
+        {
+            //printf("Found \"NULL\"\n");
+            long available = 0;
+            for (int i = nextfitindex; i <= size + nextfitindex; i++)
+            {
+                if (!strcmp(mem[i], "NULL")) available++;
+                else break;
+            }
+            // printf("Available found: %ld\n", available);
+            if (available >= size)
+            {
+                for (int j = nextfitindex; j < size + nextfitindex; j++)
+                    strcpy(mem[j], label);
+
+                return nextfitindex;
+            }
+            else return -1;
+        }
+    }
+    printf("Finished both loops\n");
+    return -1;
 }
 
-long next_fit_allocate(char **mem, long int size, char *label)
-{
-    
-}
+long best_fit_allocate(char **mem, long size, char *label)
+{   
+    long smallestBlockIndex = -1, smallestBlockSize = 0;
+    for (int i = 0; i < memsize; i++)
+    {
+        if (!strcmp(mem[i], "NULL"))
+        {
+            long currBlockIndex = i, currBlockSize = 0;
 
+            while (!strcmp(mem[i], "NULL"))
+            {
+                currBlockSize++;
+                if (i == memsize -1) break;
+                i++;
+            }
+            if (smallestBlockIndex < 0 || smallestBlockSize > currBlockSize) 
+            {
+                smallestBlockIndex = currBlockIndex;
+                smallestBlockSize = currBlockSize;
+            }
+        }
+    }
+
+    for (int i = smallestBlockIndex; i < size + smallestBlockIndex; i++)
+        strcpy(mem[i], label);
+    
+    return smallestBlockIndex;
+}
 
 long* release(char **mem, char *label)
 {
-    char **currBlock = mem;
-    long int *res = malloc(sizeof(long int) * 2);
+    long *res = malloc(sizeof(long) * 2);
     res[0] = 0;
     res[1] = -1;
-    while(*currBlock)
+    for (int i = 0; i < memsize; i++)
     {
-        if (!strcmp(*currBlock, label))
+        if (!strcmp(mem[i], label))
         {
-            res[1] = res[1] < 0 ? currBlock - mem : res[1];
-            res[0]++;
-            strcpy(*currBlock, "NULL");
+            res[1] = i;
+            for (int j = i; j < memsize; j++)
+            {
+                if (strcmp(mem[j], label)) break;
+                res[0]++;
+                strcpy(mem[j], "NULL");
+            }
+            //printf("Returning res: [%ld, %ld]\n", res[0], res[1]);
+            return res;
         }
-        currBlock++;
     }
+    //printf("Exited loop\n");
+    //printf("Returning res: [%ld, %ld]\n", res[0], res[1]);
     return res;
+
+
+    // while(*currBlock)
+    // {
+    //     if (!strcmp(*currBlock, label))
+    //     {
+    //         res[1] = res[1] < 0 ? currBlock - mem : res[1];
+    //         res[0]++;
+    //         strcpy(*currBlock, "NULL");
+    //     }
+    //     currBlock++;
+    // }
+    // return res;
 }
