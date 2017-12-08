@@ -24,7 +24,7 @@ This program simulates four different memory allocation algorithms discussed in 
 To use this memory allocation simulator, run the compiled binary file with the appropriate command line arguments.
 
 ```
-./project2 SORTING_ALGORITHM ALLOCATION_SIZE SCRIPT_FILE
+Usage: ./project2 SORTING_ALGORITHM ALLOCATION_SIZE SCRIPT_FILE
 ```
 
 Example:
@@ -32,9 +32,9 @@ Example:
 ./project2 BESTFIT 1024 script.txt
 ```
 
-The above command line arguments can be the following:
-- `SORTING_ALGORITHM`
-    - `FIRSTFIT`
-    - `NEXTFIT`
-    - `BESTFIT`
-    - `BUDDY`
+## Command Options
+For the choice of sorting algorithm, the following options are available:
+- `FIRSTFIT`
+- `NEXTFIT`
+- `BESTFIT`
+- `BUDDY`
