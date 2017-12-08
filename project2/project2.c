@@ -11,6 +11,7 @@
 typedef struct Node {
     char *label;
     long size;
+    long startPos;
     struct Node *left, *right;
 } Node;
 
@@ -37,6 +38,7 @@ long* release(char **mem, char *label);
 
 long nextfitindex;
 long memsize;
+Node *root;
 
 int main(int argc, char** argv)
 {
@@ -68,7 +70,9 @@ int main(int argc, char** argv)
     else if (!strcmp(argv[1], "NEXTFIT"))
         algmode = NEXTFIT;
     else if (!strcmp(argv[1], "BUDDY"))
-        algmode = BUDDY;
+    {
+        algmode = BUDDY; 
+    }
     else 
     {
         printf("Invalid allocation algorithm\n");
@@ -134,38 +138,46 @@ void mainLoop(mode algmode, char **mem, FILE *script)
                 {
                     if (!strcmp(tokens[1], "AVAILABLE"))
                     {
-                        char *prevLabel = malloc(sizeof(char) * 16);
-                        char *currLabel = malloc(sizeof(char) * 16);
-                        strcpy(prevLabel, mem[0]);
-                        strcpy(currLabel, mem[0]);
                         
                         for (int i = 0; i < memsize; i++)
                         {
-                            // printf("Current label: %s\n", mem[i]);
-                            strcpy(currLabel, mem[i]);
-                            if (!strcmp(currLabel, "NULL"))
+                            if (!strcmp(mem[i], "NULL"))
                             {
                                 long currSize = 0;
                                 long currPos = i;
-                                while (!strcmp(currLabel, "NULL") && i < memsize)
+                                while (i < memsize && !strcmp(mem[i], "NULL"))
                                 {
                                     currSize++;
-                                    strcpy(currLabel, mem[i++]);
+                                    i++;
                                 }
                                 printf("(%ld, %ld) ", currSize, currPos);
                             }
-                            
-                            strcpy(prevLabel, currLabel);
                         }  
                         putchar('\n'); 
                     }
                     else if (!strcmp(tokens[1], "ASSIGNED"))
                     {
-                        while(*currBlockLoc)
+                        int wentIn = 0;
+                        for (int i = 0; i < memsize; i++)
                         {
-                            printf("Current block label: %s, location: %ld\n", *currBlockLoc, currBlockLoc - mem);
-                            currBlockLoc++;
+                            if (wentIn) i--;
+                            wentIn = 0;
+                            if (strcmp(mem[i], "NULL"))
+                            {
+                                char *currLabel = malloc(sizeof(char) * 16);
+                                strcpy(currLabel, mem[i]);
+                                long currPos = i;
+                                long size = 0;
+                                while(strcmp(mem[i], "NULL") && !strcmp(mem[i], currLabel))
+                                {
+                                    wentIn = 1;
+                                    size++;
+                                    i++;
+                                }
+                                printf("(%s, %ld, %ld) ", mem[currPos], size, currPos);
+                            }
                         }
+                        putchar('\n');
                     }
                     else
                     {
@@ -359,6 +371,21 @@ long best_fit_allocate(char **mem, long size, char *label)
     
     return smallestBlockIndex;
 }
+
+// long buddy_allocate (char** mem, long size, char *label)
+// {
+//     if (root->left == NULL && size <= root->size/2)
+//     {
+//         root->left = malloc(sizeof(Node));
+//         root->right = malloc(sizeof(Node));
+//         root->left->label = "NULL";
+//         root->left->size = root->size/2;
+//         root->left->startPos = root->startPos;
+//         root->left->label = "NULL";
+        
+//     }
+// }
+
 
 long* release(char **mem, char *label)
 {
