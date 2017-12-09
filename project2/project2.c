@@ -32,8 +32,8 @@ long best_fit_allocate(char **mem, long size, char *label);
 long first_fit_allocate(char **mem, long size, char *label);
 long next_fit_allocate(char **mem, long size, char *label);
 long buddy_allocate(char **mem, long size, char* label);
-
 long* release(char **mem, char *label);
+void find(char **mem, char *label);
 
 
 long nextfitindex;
@@ -217,6 +217,13 @@ void mainLoop(mode algmode, char **mem, FILE *script)
                 else if(!strcmp(tokens[0], "PRINT"))
                 {
                     print_array(mem, memsize);
+                }
+                else if (!strcmp(tokens[0], "FIND"))
+                {
+                    if (tokens[1])
+                    {
+                        find(mem, tokens[1]);
+                    }
                 }
             }
         }
@@ -423,4 +430,26 @@ long* release(char **mem, char *label)
     //     currBlock++;
     // }
     // return res;
+}
+
+void find(char **mem, char *label)
+{
+    long size = 0;
+    long startPos = -1;
+    
+    for (int i = 0; i < memsize; i++)
+    {
+        if (!strcmp(mem[i], label))
+        {
+            if (startPos < 0) startPos = i;
+            size++;
+        }
+    }
+    
+    if (startPos >= 0) 
+        printf("(%s, %ld, %ld)\n", label, size, startPos);
+    else 
+        printf("Could not find process %s\n", label);
+        
+    return;
 }
